@@ -1,0 +1,6 @@
+.tox/
+*.cfg
+logs/
+Horizontal_Scaling_Optimizer.egg-info/
+*.un~
+*.lsd
