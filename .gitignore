@@ -1,6 +1,6 @@
 *.cfg
-logs/
-hosts/
+*.log
+horizontal_scaling_optimizer/hosts/*.txt
 Horizontal_Scaling_Optimizer.egg-info/
 *.un~
 *.lsd
