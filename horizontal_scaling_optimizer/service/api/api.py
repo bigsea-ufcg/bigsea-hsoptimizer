@@ -14,14 +14,16 @@
 # limitations under the License.
 
 import datetime
+import horizontal_scaling_optimizer as hso
 
-from horizontal_scaling_optimizer.service.horizontal_scale import r_predictor
+from horizontal_scaling_optimizer.service.horizontal_scaling import r_predictor
 from horizontal_scaling_optimizer.utils.logger import Log
 from horizontal_scaling_optimizer.utils import monasca
 from horizontal_scaling_optimizer.utils import shell
 
 
-LOG = Log("HS_Servicev10", "hs_optimizer.log")
+LOG = Log("HS_Servicev10", '%(log_dir)s/hs_optimizer.log' % {'log_dir':
+                                                             hso.LOG_DIR})
 predictor = r_predictor.RPredictor()
 monasca_monitor = monasca.MonascaMonitor()
 
@@ -51,7 +53,9 @@ def _get_used_mem(value):
 
 def _populate_host_utilization_files(hosts):
     for host in hosts:
-        output_file = '%s.txt' % host
+        output_file = '%(hosts_dir)s/%(host)s.txt' % (
+            {'hosts_dir': hso.HOSTS_DIR, 'host': host})
+
         dimensions = {'hostname': host}
 
         cpu_info = monasca_monitor.get_stats_measurements('cpu.percent',
@@ -69,6 +73,7 @@ def _populate_host_utilization_files(hosts):
 
         counter = 0
         index = 0
+        shell.clean_file(output_file)
         for i in range(len(cpu_info)):
             if counter % 3 == 0:
                 index += 1

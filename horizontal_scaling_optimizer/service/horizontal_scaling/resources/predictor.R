@@ -157,5 +157,6 @@ predict                   <- create_predict(instance.last, TRUE,
 
 num_maq                   <- create_num_maq_df(predict, host_cpu, host_mem,
                                                predict_horizon)
-
 cat(min(num_maq$num_maq))
+
+

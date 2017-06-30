@@ -24,8 +24,7 @@ def execute_r_script(script, args):
     p_status = Popen(command, shell=True, stdout=PIPE, stderr=PIPE)
     out, err = p_status.communicate()
     try:
-        print(out, err)
-        value = float(out)
+        value = int(out)
         return value
     except Exception as e:
         print e
@@ -36,3 +35,8 @@ def execute_r_script(script, args):
 def write_to_file(outfile, line):
     with open(outfile, 'a') as f:
         f.write(line)
+
+
+def clean_file(outfile):
+    with open(outfile, 'w'):
+        pass

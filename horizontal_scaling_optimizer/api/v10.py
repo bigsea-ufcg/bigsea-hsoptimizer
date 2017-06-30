@@ -1,8 +1,7 @@
-import random
-
 from flask import Blueprint
+from flask import jsonify
 from flask import request
-from horizontal_scaling_optimizer.service import api
+from horizontal_scaling_optimizer.service.api import api
 
 hso_api = Blueprint('hso_api', __name__)
 
@@ -12,8 +11,9 @@ def get_cluster_size():
     data = request.get_json()
     try:
         hosts = data['hosts']
-        return api.get_cluster_size(hosts)
+        result = api.get_cluster_size(hosts)
+        return jsonify({'cluster_size': result})
     except Exception:
-        return -1
+        return jsonify({'cluster_size': -1})
 
 

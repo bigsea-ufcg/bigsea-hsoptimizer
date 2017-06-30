@@ -12,14 +12,13 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
 
+import horizontal_scaling_optimizer as hso
 from horizontal_scaling_optimizer.utils import shell
 
 class RPredictor():
     def __init__(self):
-        ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-        self.pred_file = ROOT_DIR + '/resources/predictor.R'
+        self.pred_file = hso.HORIZONTAL_SCALING_DIR + '/resources/predictor.R'
         self.pred_unit = 2  # 2 horizons of 15 minutes = 30 minutes prediction
 
     def get_title(self):
@@ -28,6 +27,9 @@ class RPredictor():
     def predict(self, hosts):
         cluster_size = 0
         for host in hosts:
+            host_path = '%(host_dir)/%(host)s.txt' % {'host_dir': hso.HOSTS_DIR,
+                                                      'host': host}
             machines = shell.execute_r_script(
-                self.pred_file, ['%s.txt' % host, "%s" % self.pred_unit])
+                self.pred_file, ['%s' % host_path, "%s" % self.pred_unit])
             cluster_size += machines
+        return cluster_size
