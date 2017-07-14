@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import datetime
+import time
 import horizontal_scaling_optimizer as hso
 
 from horizontal_scaling_optimizer.service.horizontal_scaling import r_predictor
@@ -29,10 +30,20 @@ monasca_monitor = monasca.MonascaMonitor()
 
 
 def get_cluster_size(hosts):
+    print ("%(time)s | Getting cluster size based on hosts utilization" %
+           {'time': time.strftime("%H:%M:%S")})
     _populate_host_utilization_files(hosts)
     return _get_new_cluster_size(hosts)
 
+
+def get_preemtible_instances():
+    instances = []
+    return instances
+
+
 def _get_new_cluster_size(hosts):
+    print ("%(time)s | Calculating cluster size" %
+           {'time': time.strftime("%H:%M:%S")})
     return predictor.predict(hosts)
 
 
@@ -53,6 +64,10 @@ def _get_used_mem(value):
 
 def _populate_host_utilization_files(hosts):
     for host in hosts:
+        print ("%(time)s | Getting CPU and RAM utilization for host %(host)s"
+               % {'time': time.strftime("%H:%M:%S"), 'host': host})
+
+        time.sleep(5)
         output_file = '%(hosts_dir)s/%(host)s.txt' % (
             {'hosts_dir': hso.HOSTS_DIR, 'host': host})
 
