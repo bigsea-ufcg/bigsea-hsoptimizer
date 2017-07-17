@@ -13,8 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import time
+
 import horizontal_scaling_optimizer as hso
 from horizontal_scaling_optimizer.utils import shell
+from horizontal_scaling_optimizer.utils.logger import Log
+
+LOG = Log("HS_RPredictor", '%(log_dir)s/hs_predictor.log' % {'log_dir':
+                                                             hso.LOG_DIR})
 
 class RPredictor():
     def __init__(self):
@@ -27,9 +33,12 @@ class RPredictor():
     def predict(self, hosts):
         cluster_size = 0
         for host in hosts:
-            host_path = '%(host_dir)/%(host)s.txt' % {'host_dir': hso.HOSTS_DIR,
-                                                      'host': host}
+            host_path = ('%(host_dir)s/%(host)s.txt' %
+                         {'host_dir': hso.HOSTS_DIR, 'host': host})
             machines = shell.execute_r_script(
                 self.pred_file, ['%s' % host_path, "%s" % self.pred_unit])
+            print ("%(time)s | Prediction returned %(machines)s machines for "
+                   "host %(host)s" % {'time': time.strftime("%H:%M:%S"),
+                                      'machines': machines, 'host': host})
             cluster_size += machines
         return cluster_size
