@@ -20,6 +20,7 @@ import horizontal_scaling_optimizer as hso
 from horizontal_scaling_optimizer.service.horizontal_scaling import r_predictor
 from horizontal_scaling_optimizer.utils.logger import Log
 from horizontal_scaling_optimizer.utils import monasca
+from horizontal_scaling_optimizer.utils import openstack
 from horizontal_scaling_optimizer.utils import shell
 
 
@@ -36,9 +37,37 @@ def get_cluster_size(hosts):
     return _get_new_cluster_size(hosts)
 
 
-def get_preemtible_instances():
-    instances = []
-    return instances
+def get_preemtible_instances(username, password, project_id, auth_ip, domain):
+    connector = openstack.OpenStackConnector(LOG)
+    sahara = connector.get_sahara_client(username, password, project_id,
+                                         auth_ip, domain)
+    clusters = connector.list_cluster_with_name(sahara, 'osahara')
+    preemtible = {}
+    for cluster in clusters:
+        preemtible[cluster.id] = _get_preemtible_instances(sahara, cluster)
+
+    return preemtible
+
+
+def _get_preemtible_instances(sahara, cluster):
+    preemtible = {1: [], 2: [], 3: []}
+    for ng in cluster.node_groups:
+        if 'master' in ng['name'].lower():
+            preemtible[1] = _add_instance_id(ng['instances'])
+        elif ('slave' in ng['name'].lower() and
+                'opportunistic' not in ng['name'].lower()):
+            preemtible[2] = _add_instance_id(ng['instances'])
+        elif ('slave' in ng['name'].lower() and
+              'opportunistic' in ng['name'].lower()):
+            preemtible[3] = _add_instance_id(ng['instances'])
+    return preemtible
+
+
+def _add_instance_id(instances):
+    result = []
+    for instance in instances:
+        result.append(instance['id'])
+    return result
 
 
 def _get_new_cluster_size(hosts):
