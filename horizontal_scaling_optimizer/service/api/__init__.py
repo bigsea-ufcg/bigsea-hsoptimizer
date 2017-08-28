@@ -17,7 +17,7 @@ import ConfigParser
 
 # Conf reading
 config = ConfigParser.RawConfigParser()
-config.read('./hs_optimizer.cfg.lsd')
+config.read('./hs_optimizer.cfg')
 
 monasca_username = config.get('monasca', 'username')
 monasca_password = config.get('monasca', 'password')
