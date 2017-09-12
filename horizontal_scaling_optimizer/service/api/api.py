@@ -44,12 +44,12 @@ def get_preemtible_instances(username, password, project_id, auth_ip, domain):
     clusters = connector.list_cluster_with_name(sahara, 'osahara')
     preemtible = {}
     for cluster in clusters:
-        preemtible[cluster.id] = _get_preemtible_instances(sahara, cluster)
+        preemtible[cluster.id] = _get_preemtible_instances(cluster)
 
     return preemtible
 
 
-def _get_preemtible_instances(sahara, cluster):
+def _get_preemtible_instances(cluster):
     preemtible = {1: [], 2: [], 3: []}
     for ng in cluster.node_groups:
         if 'master' in ng['name'].lower():
@@ -66,7 +66,7 @@ def _get_preemtible_instances(sahara, cluster):
 def _add_instance_id(instances):
     result = []
     for instance in instances:
-        result.append(instance['id'])
+        result.append(instance['instance_id'])
     return result
 
 
@@ -100,7 +100,7 @@ def _populate_host_utilization_files(hosts):
         output_file = '%(hosts_dir)s/%(host)s.txt' % (
             {'hosts_dir': hso.HOSTS_DIR, 'host': host})
 
-        dimensions = {'hostname': host}
+        dimensions = {'hostname': host+'.lsd.ufcg.edu.br'}
 
         cpu_info = monasca_monitor.get_stats_measurements('cpu.percent',
                                                           dimensions,
