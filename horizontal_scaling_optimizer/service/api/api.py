@@ -100,7 +100,7 @@ def _populate_host_utilization_files(hosts):
         output_file = '%(hosts_dir)s/%(host)s.txt' % (
             {'hosts_dir': hso.HOSTS_DIR, 'host': host})
 
-        dimensions = {'hostname': host+'.lsd.ufcg.edu.br'}
+        dimensions = {'hostname': host}
 
         cpu_info = monasca_monitor.get_stats_measurements('cpu.percent',
                                                           dimensions,
