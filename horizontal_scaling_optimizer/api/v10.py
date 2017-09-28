@@ -1,8 +1,10 @@
+import math
+
 from flask import Blueprint
 from flask import jsonify
 from flask import request
 from horizontal_scaling_optimizer.service.api import api
-
+from horizontal_scaling_optimizer.utils import math_helper as mhelper
 hso_api = Blueprint('hso_api', __name__)
 
 
@@ -11,7 +13,9 @@ def get_cluster_size():
     data = request.get_json()
     try:
         hosts = data['hosts']
-        result = api.get_cluster_size(hosts)
+        percentage = data['percentage']
+        cluster_size = api.get_cluster_size(hosts)
+        result = mhelper.percentage(percentage, cluster_size)
         print ('New cluster size is: %(cluster_size)s' %
                {'cluster_size': result})
         return jsonify({'cluster_size': result})
