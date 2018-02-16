@@ -30,11 +30,11 @@ predictor = r_predictor.RPredictor()
 monasca_monitor = monasca.MonascaMonitor()
 
 
-def get_cluster_size(hosts):
+def get_cluster_size(hosts, dummy=False):
     print ("%(time)s | Getting cluster size based on hosts utilization" %
            {'time': time.strftime("%H:%M:%S")})
-    _populate_host_utilization_files(hosts)
-    return _get_new_cluster_size(hosts)
+    util_info = _populate_host_utilization_files(hosts)
+    return _get_new_cluster_size(hosts, util_info, dummy)
 
 
 def get_preemtible_instances(username, password, project_id, auth_ip, domain):
@@ -70,10 +70,32 @@ def _add_instance_id(instances):
     return result
 
 
-def _get_new_cluster_size(hosts):
+def _get_new_cluster_size(hosts, util_info=None, dummy=False):
     print ("%(time)s | Calculating cluster size" %
            {'time': time.strftime("%H:%M:%S")})
-    return predictor.predict(hosts)
+    if not dummy:
+        return predictor.predict(hosts)
+    else:
+        if not util_info:
+            return -1
+        return _calculate_available_instances(util_info)
+
+
+def _calculate_available_instances(util_info):
+    total_vms = 0
+    for host in util_info:
+        free_cores = host['total_cpu'] * ((1 - host['cpu']) * 4)
+        free_mem = host['total_mem'] * ((1 - host['mem']) * 1)
+
+        hadoop_cores = 4
+        hadoop_mem = 2
+
+        num_vms_cores = free_cores / hadoop_cores
+        num_vms_mem = free_mem / hadoop_mem
+
+        total_vms += max(0, min(num_vms_cores, num_vms_mem))
+
+    return total_vms
 
 
 def _get_start_time(time_diff):
@@ -91,7 +113,8 @@ def _get_used_mem(value):
     return (100 - value) / 100.0
 
 
-def _populate_host_utilization_files(hosts):
+def _populate_host_utilization_files(hosts, dummy=False):
+    util_info = {}
     for host in hosts:
         print ("%(time)s | Getting CPU and RAM utilization for host %(host)s"
                % {'time': time.strftime("%H:%M:%S"), 'host': host})
@@ -102,29 +125,38 @@ def _populate_host_utilization_files(hosts):
 
         dimensions = {'hostname': host}
 
-        cpu_info = monasca_monitor.get_stats_measurements('cpu.percent',
-                                                          dimensions,
-                                                          _get_start_time(2))
-        mem_info = monasca_monitor.get_stats_measurements('mem.usable_perc',
-                                                          dimensions,
-                                                          _get_start_time(2))
-        total_cpu = monasca_monitor.last_measurement('cpu.total_logical_cores',
-                                                     dimensions,
-                                                     _get_start_time(1))[1]
-        total_mem = _from_mb_to_gb(
-            monasca_monitor.last_measurement('mem.total_mb', dimensions,
-                                             _get_start_time(1))[1])
+        cpu_info = monasca_monitor.get_stats_measurements(
+            'cpu.percent', dimensions, _get_start_time(2))
+
+        mem_info = monasca_monitor.get_stats_measurements(
+            'mem.usable_perc', dimensions, _get_start_time(2))
+
+        total_cpu = monasca_monitor.last_measurement(
+            'cpu.total_logical_cores', dimensions, _get_start_time(1))[1]
+
+        total_mem = _from_mb_to_gb(monasca_monitor.last_measurement(
+            'mem.total_mb', dimensions, _get_start_time(1))[1])
 
         counter = 0
         index = 0
         shell.clean_file(output_file)
-        for i in range(len(cpu_info)):
-            if counter % 3 == 0:
-                index += 1
-            cpu = cpu_info[i][1]/100
-            mem = _get_used_mem(mem_info[i][1])
+        if not dummy:
+            for i in range(len(cpu_info)):
+                if counter % 3 == 0:
+                    index += 1
+                cpu = cpu_info[i][1]/100
+                mem = _get_used_mem(mem_info[i][1])
 
-            line = '%s;%s;%s;%s;%s\n' % (cpu, mem, total_cpu, total_mem, index)
-            counter += 1
+                line = '%s;%s;%s;%s;%s\n' % (cpu, mem, total_cpu, total_mem,
+                                             index)
+                counter += 1
 
             shell.write_to_file(output_file, line)
+        else:
+            cpu = cpu_info[-1][1]/100
+            mem = _get_used_mem(mem_info[-1][1])
+            util_info[host] = {'cpu': cpu, 'mem': mem, 'total_cpu': total_cpu,
+                               'total_mem': total_mem}
+    return util_info
+
+
