@@ -9,11 +9,12 @@ hso_api = Blueprint('hso_api', __name__)
 
 
 @hso_api.route('/optimizer/get_cluster_size', methods=['GET'])
-def get_cluster_size(dummy=False):
+def get_cluster_size():
     data = request.get_json()
     try:
         hosts = data['hosts']
         percentage = data['percentage']
+        dummy = data['dummy']
         cluster_size = api.get_cluster_size(hosts, dummy)
         result = mhelper.percentage(percentage, cluster_size)
         print ('New cluster size is: %(cluster_size)s' %
